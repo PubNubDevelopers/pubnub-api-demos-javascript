@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Access Manager Tutorial</title>
+</head>
+
+<body>
+    <h1>Client View</h1>
+    <input id="publish-button" type="submit" value="PubNub Publish..."/>
+    <label>Set Auth Key Here:</label>
+    <input id="auth-key" type="text"/>
+</body>
+
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.21.6.min.js"></script>
+<script>
+const pubnub = new PubNub({
+    publishKey : 'YOUR PUBNUB PUBLISH KEY HERE',
+    subscribeKey : 'YOUR PUBNUB SUBSCRIBE KEY HERE'
+});
+
+const button = document.getElementById('publish-button');
+button.addEventListener('click', () => {
+    pubnub.publish({
+        channel : 'time-publish-example-channel',
+        message: {
+            mytime: 'My time is: ' + new Date().toString()
+        }
+    }, function(status, response) {
+        console.log(status, response);
+    });
+});
+
+const authKey = document.getElementById('auth-key');
+authKey.addEventListener('keyup', () => {
+    if (authKey.value) pubnub.setAuthKey(authKey.value);
+});
+
+pubnub.subscribe({
+    channels: ['time-publish-example-channel']
+});
+
+pubnub.addListener({
+    message: function(event) {
+        let pElement = document.createElement('p');
+        pElement.appendChild(document.createTextNode(event.message.mytime));
+        document.body.appendChild(pElement);
+    }
+});
+</script>
+</html>

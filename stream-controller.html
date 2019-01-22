@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stream Controller</title>
+</head>
+
+<body>
+    <label>Channel To Publish on:</label>
+    <input id="channel" type="text" placeholder="channel-name-here" />
+    <br>
+    <input id="publish-button" type="submit" value="PubNub Publish..."/>
+    <br><br>
+    <label>Add a channel to "my-group":</label>
+    <input id="new-to-group" type="text" placeholder="channel-name-here" />
+    <br>
+    <input id="add-to-group" type="submit" value="Add Channel"/>
+    <br><br>
+    <label>Currently subscribed to channel "channel-a.*" and to group "my-group"</label>
+</body>
+
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.21.6.min.js"></script>
+<script>
+const pubnub = new PubNub({
+    publishKey : 'YOUR PUBNUB PUBLISH KEY HERE',
+    subscribeKey : 'YOUR PUBNUB SUBSCRIBE KEY HERE'
+});
+
+const channel = document.getElementById('channel');
+const button = document.getElementById('publish-button');
+button.addEventListener('click', () => {
+    pubnub.publish({
+        channel : channel.value,
+        message: {
+            mytime: 'My time is: ' + new Date().toString()
+        }
+    });
+});
+
+const newChannel = document.getElementById('new-to-group');
+const addToGroup = document.getElementById('add-to-group');
+addToGroup.addEventListener('click', () => {
+    pubnub.channelGroups.addChannels({
+        channels: [newChannel.value],
+        channelGroup: 'my-group'
+    });
+});
+
+pubnub.subscribe({
+    channels: ['channel-a.*'],    // Wildcard subscribe
+    channelGroups: ['my-group'] // Channel group subscribe
+});
+
+pubnub.addListener({
+    message: function(event) {
+        let pElement = document.createElement('p');
+        pElement.appendChild(document.createTextNode(event.message.mytime));
+        document.body.appendChild(pElement);
+    }
+});
+</script>
+</html>

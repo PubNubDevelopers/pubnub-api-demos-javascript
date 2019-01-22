@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Access Manager Admin</title>
+</head>
+
+<body>
+    <h1>Admin View</h1>
+    <input id="global-grant-button" type="submit" value="Global R/W Grant"/>
+    <input id="channel-grant-button" type="submit" value="Channel R/W Grant"/>
+    <input id="pw-grant-button" type="submit" value="Channel + Password Grant"/>
+    <br>
+    <input id="read" type="checkbox" value="Read"/> Read
+    <br>
+    <input id="write" type="checkbox" value="Write"/> Write
+    <br>
+    <input id="ttl" type="text" placeholder="TTL">
+</body>
+
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.21.6.min.js"></script>
+<script>
+const readCheckBox = document.getElementById('read');
+const writeCheckBox = document.getElementById('write');
+const ttlText = document.getElementById('ttl');
+
+const timeChannel = 'time-publish-example-channel';
+const pubnub = new PubNub({
+    publishKey: 'YOUR PUBNUB PUBLISH KEY HERE',
+    subscribeKey: 'YOUR PUBNUB SUBSCRIBE KEY HERE',
+    // Use the secret key on SECURE SERVERS or PubNub Functions ONLY!
+    // It is used for granting/revoking channel access to clients.
+    secretKey: 'YOUR PUBNUB SECRET KEY HERE'
+});
+
+// Global level (no auth key, and no channel/channel group is defined)
+const globalGrantButton = document.getElementById('global-grant-button');
+globalGrantButton.addEventListener('click', () => {
+    pubnub.grant({
+        read: readCheckBox.checked,   // true to grant, false to revoke
+        write: writeCheckBox.checked, // true to grant, false to revoke
+        ttl: +ttlText.value           // Time to live in minutes, 0 for permanent.
+    }, (status, response) => { console.log(status, response); });
+});
+
+// Channel level (Restricts a channel only)
+const channelGrantButton = document.getElementById('channel-grant-button');
+channelGrantButton.addEventListener('click', () => {
+    pubnub.grant({
+        channels: [timeChannel],
+        read: readCheckBox.checked,   // true to grant, false to revoke
+        write: writeCheckBox.checked, // true to grant, false to revoke
+        ttl: +ttlText.value           // Time to live in minutes, 0 for permanent.
+    }, (status, response) => { console.log(status, response); });
+});
+
+// Channel + Auth key (channel and password is defined)
+// Clients can read/write to the channel ONLY if they provide an auth key.
+const pwGrantButton = document.getElementById('pw-grant-button');
+pwGrantButton.addEventListener('click', () => {
+    pubnub.grant({
+        authKeys: ['my-password-12345'],
+        channels: [timeChannel],
+        read: readCheckBox.checked,   // true to grant, false to revoke
+        write: writeCheckBox.checked, // true to grant, false to revoke
+        ttl: +ttlText.value           // Time to live in minutes, 0 for permanent.
+    }, (status, response) => { console.log(status, response); });
+});
+</script>
+</html>

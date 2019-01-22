@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PubNub Presence Tutorial</title>
+    <style>
+        .container { display: inline-table; width: 30%; max-width: 30%; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>My UUID</h1>
+        <p id="uuid"></p>
+
+        <h2>Current Channel Subscribers</h2>
+        <ul id="online"></ul>
+    </div>
+    <div class="container">
+        <h1>Presence Methods</h1>
+        <input id="here-now" type="submit" value="Here Now"/>
+        <input id="where-now" type="submit" value="Where Now"/>
+        <input id="global-here-now" type="submit" value="Global Here Now"/>
+        <input id="get-state" type="submit" value="Get State"/>
+        <input id="set-state" type="submit" value="Set State"/> 
+        <p id="method-result"></p>
+    </div>
+    <div class="container">
+        <h1>Presence Events</h1>
+        <ul id="events"></ul>
+    </div>
+</body>
+
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.21.6.min.js"></script>
+<script>
+const uuidElement = document.getElementById('uuid');
+const onlineList = document.getElementById('online');
+const eventsList = document.getElementById('events');
+const getHereNow = document.getElementById('here-now');
+const getWhereNow = document.getElementById('where-now');
+const getGlobalHereNow = document.getElementById('global-here-now');
+const getState = document.getElementById('get-state');
+const setState = document.getElementById('set-state');
+const methodResult = document.getElementById('method-result');
+const roomA = 'room-channel-a';
+
+const pubnub = new PubNub({
+    publishKey : 'YOUR PUBNUB PUBLISH KEY HERE',
+    subscribeKey : 'YOUR PUBNUB SUBSCRIBE KEY HERE'
+});
+
+pubnub.addListener({
+    status: (statusEvent) => {
+        if (statusEvent.category === "PNConnectedCategory") {
+            pubnub.hereNow({ channels: [roomA] },
+            (status, response) => {
+                response.channels[roomA].occupants.forEach((member) => {
+                    addToOnlineList(member.uuid);
+                });
+            });
+        }
+    },
+    presence: (event) => {
+        let text, liElement = document.createElement('li');
+
+        if (event.action === 'join') {
+            text = `Join    - ${event.timetoken} - ${event.uuid}`;
+            addToOnlineList(event.uuid);
+        }
+
+        if (event.action === 'leave') {
+            text = `Leave   - ${event.timetoken} - ${event.uuid}`;
+            removeFromOnlineList(event.uuid);
+        }
+
+        if (event.action === 'timeout') {
+            text = `Timeout - ${event.timetoken} - ${event.uuid}`;
+            removeFromOnlineList(event.uuid);
+        }
+
+        if (event.action === 'state-change') {
+            text = `State Change - ${event.timetoken} - ${event.uuid}`;
+        }
+
+        if (event.action === 'interval') {
+            text = `Interval - ${event.timetoken} - ${JSON.stringify(event)}`;
+        }
+
+        liElement.innerText = text;
+        eventsList.appendChild(liElement);
+    }
+});
+
+pubnub.subscribe({
+    channels: [roomA],
+    withPresence: true
+});
+
+window.onbeforeunload = (event) => {
+    pubnub.unsubscribeAll();
+};
+
+const myUuid = pubnub.getUUID();
+uuidElement.innerText = pubnub.getUUID();
+
+getHereNow.addEventListener('click', () => {
+    pubnub.hereNow({ channels: [roomA] },
+    (status, response) => {
+        methodResult.innerText = `Here Now:\n${JSON.stringify(response)}`
+    });
+});
+
+getWhereNow.addEventListener('click', () => {
+    pubnub.whereNow({ uuid: myUuid },
+    (status, response) => {
+        methodResult.innerText = `Where Now:\n${JSON.stringify(response)}`
+    });
+});
+
+getGlobalHereNow.addEventListener('click', () => {
+    pubnub.hereNow({ includeUUIDs: true, includeState: true },
+    (status, response) => {
+        methodResult.innerText = `Global Here Now:\n${JSON.stringify(response)}`
+    });
+});
+
+getState.addEventListener('click', () => {
+    pubnub.getState({ uuid: myUuid, channels: [roomA] },
+    (status, response) => {
+        methodResult.innerText = `Get State:\n${JSON.stringify(response)}`
+    });
+});
+
+setState.addEventListener('click', () => {
+    pubnub.setState({ 
+        state: {
+            "full_name" : "John Smith"
+        },
+        uuid: myUuid,
+        channels: [roomA]
+    });
+});
+
+function removeFromOnlineList(uuid) {
+    let element = document.getElementById(uuid);
+    if (element) element.remove();
+}
+
+function addToOnlineList(uuid) {
+    let liElement = document.createElement('li');
+    liElement.id = liElement.innerText = uuid;
+    onlineList.appendChild(liElement);
+}
+</script>
+</html>

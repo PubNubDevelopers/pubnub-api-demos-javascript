@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PubNub History Tutorial</title>
+</head>
+
+<body>
+    <input id="count-button" type="submit" value="Fetch 3 Messages"/>
+    <input id="time-button" type="submit" value="Fetch 10 Minutes"/>
+    <input id="all-button" type="submit" value="Fetch >100 Messages"/>
+    <div id="message-container"></div>
+</body>
+
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.21.6.min.js"></script>
+<script>
+const container = document.getElementById('message-container');
+const countButton = document.getElementById('count-button');
+const timeButton = document.getElementById('time-button');
+const allButton = document.getElementById('all-button');
+
+const pubnub = new PubNub({
+    publishKey : 'YOUR PUBNUB PUBLISH KEY HERE',
+    subscribeKey : 'YOUR PUBNUB SUBSCRIBE KEY HERE'
+});
+
+const appendMessageToWebPage = (message) => {
+    let pElement = document.createElement('p');
+    pElement.appendChild(document.createTextNode(message.entry.mytime));
+    container.appendChild(pElement);
+}
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Count of Channel Messages (up to 100)
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+countButton.addEventListener('click', () => {
+    pubnub.history({
+        channel: 'time-publish-example-channel',
+        count: 3
+    }, function (status, response) {
+        container.innerHTML = '';
+        response.messages.forEach(appendMessageToWebPage);
+    });
+});
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Time slice of messages (up to 100 at a time)
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+timeButton.addEventListener('click', () => {
+    const nowJsTimestamp = new Date().getTime();
+    const tenMinutes = 10 * 60 * 1000;
+    pubnub.history({
+        channel: 'time-publish-example-channel',
+        start: nowJsTimestamp + '0000',
+        end: (nowJsTimestamp - tenMinutes) + '0000',
+    }, function (status, response) {
+        container.innerHTML = '';
+        response.messages.forEach(appendMessageToWebPage);
+    });
+});
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Time slice of messages (unlimited messages, can be dangerous for clients)
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+function messageHandler(status, response) {
+    const msgs = response.messages;
+    const start = response.startTimeToken;
+    const end = response.endTimeToken;
+
+    response.messages.forEach(appendMessageToWebPage);
+
+    if (msgs.length === 100) {
+        getAllMessages(start);
+    }
+}
+
+function getAllMessages(nowJsTimestamp) {
+    console.log(nowJsTimestamp);
+    if (typeof nowJsTimestamp !== 'string') {
+        nowJsTimestamp = new Date().getTime() + '0000';
+        container.innerHTML = '';
+    }
+
+    pubnub.history({
+        channel: 'time-publish-example-channel',
+        start : nowJsTimestamp,
+        stringifiedTimeToken: true,
+    }, messageHandler);
+}
+
+allButton.addEventListener('click', getAllMessages);
+</script>
+</html>
