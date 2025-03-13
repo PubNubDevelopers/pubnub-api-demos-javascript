@@ -13,7 +13,7 @@ const pubnub = new PubNub({
 
 PubNub accounts are **free** up to 1 million transactions per month.
 
-<a href="https://dashboard.pubnub.com/signup?devrel_gh=pubnub-api-demos-js">
+<a href="https://admin.pubnub.com/register">
     <img alt="PubNub Signup" src="https://i.imgur.com/og5DDjf.png" width=260 height=97/>
 </a>
 
